@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stopwatch with Laps</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0f1419;color:#e6edf3;min-height:100vh;padding:2rem 1rem;line-height:1.6}
+.app{max-width:680px;margin:0 auto}
+h1{text-align:center;font-size:1.5rem;margin-bottom:1.5rem}
+.card{background:#1a2027;border:1px solid #2a3441;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+.time{font-family:"SF Mono",Monaco,monospace;font-size:4rem;text-align:center;color:#22d3ee;font-weight:700;letter-spacing:.04em;padding:1rem 0}
+.controls{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+.controls button{background:#0f1419;border:1px solid #2a3441;color:#e6edf3;padding:.7rem 1.5rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:1rem;font-weight:500;min-width:110px}
+.controls button:hover{border-color:#06b6d4}
+.controls button.primary{background:#06b6d4;color:#000;border-color:#06b6d4}
+.controls button.danger{background:#dc2626;color:#fff;border-color:#dc2626}
+.laps{max-height:380px;overflow:auto}
+.lap{display:grid;grid-template-columns:60px 1fr 1fr;gap:.5rem;padding:.6rem .8rem;border-bottom:1px solid #2a3441;font-family:"SF Mono",Monaco,monospace;font-size:.9rem;align-items:center}
+.lap .num{color:#8b949e}
+.lap .split{color:#8b949e}
+.lap .total{color:#22d3ee;text-align:right}
+.lap.fastest{background:rgba(74,222,128,0.08)}
+.lap.slowest{background:rgba(248,113,113,0.08)}
+.lap.fastest .total{color:#4ade80}
+.lap.slowest .total{color:#f87171}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;margin-top:1rem}
+.stat{background:#0f1419;border:1px solid #06b6d4;border-radius:8px;padding:.8rem;text-align:center}
+.stat .label{color:#8b949e;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
+.stat .v{color:#22d3ee;font-size:1rem;font-weight:600;font-family:"SF Mono",Monaco,monospace}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Stopwatch</h1>
+  <div class="card">
+    <div class="time" id="display">00:00:00.00</div>
+    <div class="controls">
+      <button class="primary" id="startBtn" onclick="start()">Start</button>
+      <button onclick="lap()" id="lapBtn" disabled>Lap</button>
+      <button class="danger" onclick="reset()">Reset</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="card">
+    <h3 style="font-size:.9rem;margin-bottom:.5rem;color:#8b949e">Laps</h3>
+    <div class="laps" id="laps"><div style="text-align:center;color:#8b949e;padding:1rem">No laps yet</div></div>
+  </div>
+</div>
+<script>
+let startTime=0,elapsed=0,timer=null,running=false,laps=[];
+function fmt(ms){
+  const h=Math.floor(ms/3600000);
+  const m=Math.floor((ms%3600000)/60000);
+  const s=Math.floor((ms%60000)/1000);
+  const cs=Math.floor((ms%1000)/10);
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}.${String(cs).padStart(2,"0")}`;
+}
+function tick(){
+  const now=performance.now();
+  document.getElementById("display").textContent=fmt(elapsed+(now-startTime));
+  requestAnimationFrame(tick);
+}
+function start(){
+  if(running){
+    elapsed+=performance.now()-startTime;
+    clearInterval(timer);
+    running=false;
+    document.getElementById("startBtn").textContent="Start";
+    document.getElementById("lapBtn").disabled=true;
+  } else {
+    startTime=performance.now();
+    running=true;
+    requestAnimationFrame(tick);
+    document.getElementById("startBtn").textContent="Stop";
+    document.getElementById("startBtn").classList.remove("primary");
+    document.getElementById("lapBtn").disabled=false;
+  }
+}
+function lap(){
+  if(!running) return;
+  const t=elapsed+performance.now()-startTime;
+  const last=laps.length?laps[laps.length-1].total:0;
+  const split=t-last;
+  laps.push({total:t,split});
+  renderLaps();
+}
+function reset(){
+  if(running){elapsed+=performance.now()-startTime;running=false;}
+  elapsed=0;laps=[];
+  clearInterval(timer);
+  document.getElementById("display").textContent="00:00:00.00";
+  document.getElementById("startBtn").textContent="Start";
+  document.getElementById("startBtn").classList.add("primary");
+  document.getElementById("lapBtn").disabled=true;
+  renderLaps();
+}
+function renderLaps(){
+  const el=document.getElementById("laps");
+  if(!laps.length){el.innerHTML='<div style="text-align:center;color:#8b949e;padding:1rem">No laps yet</div>';document.getElementById("stats").innerHTML="";return;}
+  const splits=laps.map(l=>l.split);
+  const min=Math.min(...splits),max=Math.max(...splits);
+  const avg=splits.reduce((a,b)=>a+b,0)/splits.length;
+  document.getElementById("stats").innerHTML=`
+    <div class="stat"><div class="label">Laps</div><div class="v">${laps.length}</div></div>
+    <div class="stat"><div class="label">Average</div><div class="v">${fmt(avg)}</div></div>
+    <div class="stat"><div class="label">Fastest</div><div class="v" style="color:#4ade80">${fmt(min)}</div></div>
+    <div class="stat"><div class="label">Slowest</div><div class="v" style="color:#f87171">${fmt(max)}</div></div>
+  `;
+  el.innerHTML=laps.slice().reverse().map((l,i)=>{
+    const idx=laps.length-i;
+    const cls=l.split===min?"fastest":l.split===max?"slowest":"";
+    return `<div class="lap ${cls}"><span class="num">#${idx}</span><span class="split">${fmt(l.split)}</span><span class="total">${fmt(l.total)}</span></div>`;
+  }).join("");
+}
+</script>
+</body>
+</html>
