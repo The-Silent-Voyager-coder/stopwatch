@@ -1,17 +1,12 @@
-# Stopwatch with Laps
+﻿# stopwatch
 
-A precise **lap stopwatch** with per-lap timing and aggregate stats.
+A productivity web app.
+
+## How to Use
+1. Open index.html in your browser
+2. Start using!
 
 ## Features
-- Millisecond precision
-- Lap / split times
-- Fastest and slowest laps highlighted
-- Average, fastest, slowest stats
-- Start / Stop / Lap / Reset controls
-
-## Tech
-- Pure HTML / CSS / JavaScript - no dependencies.
-- Uses `performance.now()` and `requestAnimationFrame` for smooth updates.
-
-## Run
-Open `index.html` in a browser or visit the live GitHub Pages site.
+- Clean, modern UI
+- Data saved locally
+- No server required
